@@ -13,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
@@ -49,21 +51,29 @@ public class WalletService {
     }
 
     private void notifyPayee(String payeeEmail) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        String jsonBody = "{\"email\": \"" + payeeEmail + "\"}";
-        HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
-        ResponseEntity<String> response = restTemplate.postForEntity("https://util.devi.tools/api/v1/notify", request, String.class);
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            String jsonBody = "{\"email\": \"" + payeeEmail + "\"}";
+            HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
+            ResponseEntity<String> response = restTemplate.postForEntity("https://util.devi.tools/api/v1/notify", request, String.class);
 
-        if (!response.getStatusCode().is2xxSuccessful()) {
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                throw new ExternalServiceException("Could not notify payee");
+            }
+        } catch (HttpServerErrorException e) {
             throw new ExternalServiceException("Could not notify payee");
         }
     }
 
     private void authorizeTransaction() {
-        ResponseEntity<Map> response = restTemplate.getForEntity("https://util.devi.tools/api/v2/authorize", Map.class);
-        if (!verifyResponse(response)) {
-            throw new ForbiddenException("Unauthorized");
+        try {
+            ResponseEntity<Map> response = restTemplate.getForEntity("https://util.devi.tools/api/v2/authorize", Map.class);
+            if (!verifyResponse(response)) {
+                throw new ForbiddenException("Unauthorized");
+            }
+        } catch (HttpClientErrorException e) {
+            throw new ExternalServiceException("Could not authorize transaction");
         }
     }
 

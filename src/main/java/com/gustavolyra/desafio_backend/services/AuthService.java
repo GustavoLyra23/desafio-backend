@@ -37,7 +37,6 @@ public class AuthService {
         dtoToEntity(userRequestDto, user);
         Wallet wallet = new Wallet();
         wallet.setBalance(BigDecimal.ZERO);
-        wallet.setVersion(1);
         user.setWallet(wallet);
         user = userRepository.save(user);
         return new UserResponseDto(user);

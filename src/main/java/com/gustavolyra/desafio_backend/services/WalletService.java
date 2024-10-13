@@ -1,15 +1,21 @@
 package com.gustavolyra.desafio_backend.services;
 
+import com.gustavolyra.desafio_backend.exceptions.ExternalServiceException;
 import com.gustavolyra.desafio_backend.exceptions.ForbiddenException;
-import com.gustavolyra.desafio_backend.exceptions.ResourceNotFound;
 import com.gustavolyra.desafio_backend.models.dto.TransferDto;
+import com.gustavolyra.desafio_backend.models.entities.User;
 import com.gustavolyra.desafio_backend.repositories.UserRepository;
 import com.gustavolyra.desafio_backend.util.AuthUtil;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Set;
 
@@ -27,24 +33,38 @@ public class WalletService {
     @Transactional
     public void transfer(TransferDto transferDto) {
         var user = AuthUtil.getAuthenticatedUser();
-        if (user.getWallet().getBalance().compareTo(transferDto.value()) < 0) {
+        verifyPayeeIdentity(user.getId(), transferDto.payee());
+        checkSufficientFunds(user, transferDto.value());
+        var payee = userRepository.findById(transferDto.payee()).orElseThrow(() -> new UsernameNotFoundException("Payee not found"));
+        authorizeTransaction();
+        updateBalances(user, payee, transferDto.value());
+        userRepository.saveAll(Set.of(user, payee));
+        notifyPayee(payee.getEmail());
+    }
+
+    private void checkSufficientFunds(User user, BigDecimal amount) {
+        if (user.getWallet().getBalance().compareTo(amount) < 0) {
             throw new IllegalArgumentException("Insufficient funds");
         }
+    }
 
-        var payer = userRepository.findById(transferDto.payer())
-                .orElseThrow(() -> new ResourceNotFound("User not found"));
-        var payee = userRepository.findById(transferDto.payee())
-                .orElseThrow(() -> new ResourceNotFound("User not found"));
+    private void notifyPayee(String payeeEmail) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        String jsonBody = "{\"email\": \"" + payeeEmail + "\"}";
+        HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
+        ResponseEntity<String> response = restTemplate.postForEntity("https://util.devi.tools/api/v1/notify", request, String.class);
 
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new ExternalServiceException("Could not notify payee");
+        }
+    }
+
+    private void authorizeTransaction() {
         ResponseEntity<Map> response = restTemplate.getForEntity("https://util.devi.tools/api/v2/authorize", Map.class);
         if (!verifyResponse(response)) {
             throw new ForbiddenException("Unauthorized");
         }
-
-        var payerBalance = payer.getWallet().getBalance();
-        payer.getWallet().setBalance(payerBalance.subtract(transferDto.value()));
-        payee.getWallet().setBalance(payee.getWallet().getBalance().add(transferDto.value()));
-        userRepository.saveAll(Set.of(payer, payee));
     }
 
     private boolean verifyResponse(ResponseEntity<Map> response) {
@@ -54,6 +74,18 @@ public class WalletService {
             return Boolean.TRUE.equals(data.get("authorization"));
         }
         return false;
+    }
+
+    private void updateBalances(User payer, User payee, BigDecimal amount) {
+        var payerBalance = payer.getWallet().getBalance();
+        payer.getWallet().setBalance(payerBalance.subtract(amount));
+        payee.getWallet().setBalance(payee.getWallet().getBalance().add(amount));
+    }
+
+    private void verifyPayeeIdentity(Long payerId, Long payeeId) {
+        if (payerId.equals(payeeId)) {
+            throw new IllegalArgumentException("Payer and payee must be different");
+        }
     }
 
 

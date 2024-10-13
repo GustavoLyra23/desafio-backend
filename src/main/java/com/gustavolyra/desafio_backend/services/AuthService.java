@@ -5,6 +5,7 @@ import com.gustavolyra.desafio_backend.models.dto.user.UserLoginDto;
 import com.gustavolyra.desafio_backend.models.dto.user.UserRequestDto;
 import com.gustavolyra.desafio_backend.models.dto.user.UserResponseDto;
 import com.gustavolyra.desafio_backend.models.entities.User;
+import com.gustavolyra.desafio_backend.repositories.RoleRepository;
 import com.gustavolyra.desafio_backend.repositories.UserRepository;
 import com.gustavolyra.desafio_backend.util.UserMapper;
 import jakarta.validation.Valid;
@@ -19,17 +20,21 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenGeneratorService tokenGeneratorService;
+    private final RoleRepository roleRepository;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, TokenGeneratorService tokenGeneratorService) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, TokenGeneratorService tokenGeneratorService, RoleRepository roleRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenGeneratorService = tokenGeneratorService;
+        this.roleRepository = roleRepository;
     }
 
     @Transactional
     public UserResponseDto register(@Valid UserRequestDto userRequestDto) {
         User user = new User();
         UserMapper.map(userRequestDto, user);
+        user.getRoles().add(roleRepository.getReferenceById(1L));
+        user.setPassword(passwordEncoder.encode(userRequestDto.password()));
         user = userRepository.save(user);
         return new UserResponseDto(user);
     }

@@ -6,12 +6,11 @@ import lombok.Getter;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 @Getter
 public class UserResponseDto {
 
-    private final UUID id;
+    private final Long id;
     private final String fullName;
     private final String email;
     private final Set<RoleDto> roles = new HashSet<>();

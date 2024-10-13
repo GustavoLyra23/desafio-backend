@@ -14,6 +14,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+
 @Service
 public class AuthService {
 
@@ -34,6 +36,7 @@ public class AuthService {
         User user = new User();
         dtoToEntity(userRequestDto, user);
         Wallet wallet = new Wallet();
+        wallet.setBalance(BigDecimal.ZERO);
         wallet.setVersion(1);
         user.setWallet(wallet);
         user = userRepository.save(user);

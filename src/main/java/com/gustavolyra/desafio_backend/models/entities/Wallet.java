@@ -11,7 +11,6 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Objects;
-import java.util.UUID;
 
 @Setter
 @Getter
@@ -24,11 +23,12 @@ public class Wallet implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     private BigDecimal balance;
     private Instant createdAt;
     private Instant updatedAt;
+    @Version
     private Integer version;
 
     @OneToOne(mappedBy = "wallet")
@@ -45,7 +45,7 @@ public class Wallet implements Serializable {
     }
 
 
-    public Wallet(UUID id, BigDecimal balance, Integer version) {
+    public Wallet(Long id, BigDecimal balance, Integer version) {
         this.id = id;
         this.balance = balance;
         this.version = version;

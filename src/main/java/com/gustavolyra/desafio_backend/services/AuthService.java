@@ -5,9 +5,9 @@ import com.gustavolyra.desafio_backend.models.dto.user.UserLoginDto;
 import com.gustavolyra.desafio_backend.models.dto.user.UserRequestDto;
 import com.gustavolyra.desafio_backend.models.dto.user.UserResponseDto;
 import com.gustavolyra.desafio_backend.models.entities.User;
+import com.gustavolyra.desafio_backend.models.entities.Wallet;
 import com.gustavolyra.desafio_backend.repositories.RoleRepository;
 import com.gustavolyra.desafio_backend.repositories.UserRepository;
-import com.gustavolyra.desafio_backend.util.UserMapper;
 import jakarta.validation.Valid;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,9 +32,10 @@ public class AuthService {
     @Transactional
     public UserResponseDto register(@Valid UserRequestDto userRequestDto) {
         User user = new User();
-        UserMapper.map(userRequestDto, user);
-        user.getRoles().add(roleRepository.getReferenceById(1L));
-        user.setPassword(passwordEncoder.encode(userRequestDto.password()));
+        dtoToEntity(userRequestDto, user);
+        Wallet wallet = new Wallet();
+        wallet.setVersion(1);
+        user.setWallet(wallet);
         user = userRepository.save(user);
         return new UserResponseDto(user);
     }
@@ -47,5 +48,13 @@ public class AuthService {
             throw new InvalidCredentialsException("Invalid credentials");
         }
         return tokenGeneratorService.generateToken(user);
+    }
+
+    private void dtoToEntity(UserRequestDto userRequestDto, User user) {
+        user.setFullName(userRequestDto.fullName());
+        user.setCpf(userRequestDto.cpf());
+        user.setEmail(userRequestDto.email());
+        user.getRoles().add(roleRepository.getReferenceById(1L));
+        user.setPassword(passwordEncoder.encode(userRequestDto.password()));
     }
 }

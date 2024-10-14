@@ -15,6 +15,14 @@ public class WalletDto {
     private final Instant createdAt;
     private final Instant updatedAt;
 
+    public WalletDto(Long id, BigDecimal balance, Integer version, Instant createdAt, Instant updatedAt) {
+        this.id = id;
+        this.balance = balance;
+        this.version = version;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
+
     public WalletDto(Wallet wallet) {
         this.id = wallet.getId();
         this.balance = wallet.getBalance();

@@ -17,4 +17,10 @@ public class UserFactory {
         return new UserResponseDto(1L, "test name", "test@gmail.com",
                 Set.of(new RoleDto(1L, "ROLE_USER")));
     }
+
+    public static UserRequestDto invalidUserRequestDto() {
+        return new UserRequestDto(" ", " ", " ", " ");
+  }
+
+
 }

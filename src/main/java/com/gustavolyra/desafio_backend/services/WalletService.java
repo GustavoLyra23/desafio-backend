@@ -2,7 +2,8 @@ package com.gustavolyra.desafio_backend.services;
 
 import com.gustavolyra.desafio_backend.exceptions.ExternalServiceException;
 import com.gustavolyra.desafio_backend.exceptions.ForbiddenException;
-import com.gustavolyra.desafio_backend.models.dto.TransferDto;
+import com.gustavolyra.desafio_backend.models.dto.wallet.TransferDto;
+import com.gustavolyra.desafio_backend.models.dto.wallet.WalletDto;
 import com.gustavolyra.desafio_backend.models.entities.User;
 import com.gustavolyra.desafio_backend.repositories.UserRepository;
 import com.gustavolyra.desafio_backend.util.AuthUtil;
@@ -98,5 +99,9 @@ public class WalletService {
         }
     }
 
-
+    @Transactional(readOnly = true)
+    public WalletDto findWalletData() {
+        var user = AuthUtil.getAuthenticatedUser();
+        return new WalletDto(user.getWallet());
+    }
 }

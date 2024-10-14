@@ -1,6 +1,6 @@
 package com.gustavolyra.desafio_backend.models.dto.user;
 
-import com.gustavolyra.desafio_backend.models.dto.RoleDto;
+import com.gustavolyra.desafio_backend.models.dto.role.RoleDto;
 import com.gustavolyra.desafio_backend.models.entities.User;
 import lombok.Getter;
 

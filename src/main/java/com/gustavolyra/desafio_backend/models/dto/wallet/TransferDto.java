@@ -1,4 +1,4 @@
-package com.gustavolyra.desafio_backend.models.dto;
+package com.gustavolyra.desafio_backend.models.dto.wallet;
 
 import jakarta.validation.constraints.Positive;
 
